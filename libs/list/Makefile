@@ -23,7 +23,7 @@ $(BUILD_DIR):
 	@mkdir -p $@
 
 $(BUILD_DIR)/%.o:$(SRC_DIR)/%.c
-	@$(CC) $(FLAGS) -c $< -o $@ $(INCLUDES)
+	@$(CC) $(FLAGS) -fPIC -c $< -o $@ $(INCLUDES)
 
 $(NAME):$(BUILD_DIR) $(OBJ)
 	@ar rc $@ $(OBJ)

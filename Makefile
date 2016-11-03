@@ -3,7 +3,7 @@ ifeq ($(HOSTTYPE),)
 endif
 
 CC=clang
-FLAGS=-Wall -Wextra -Werror
+FLAGS=-Wall -Wextra -Werror -Wconversion
 
 NAME=libft_malloc_$(HOSTTYPE).so
 TEST=test
@@ -20,8 +20,13 @@ INCLUDES=-I ./ -I ./includes -I $(DIR_LIBFT) -I $(DIR_LIST) -I $(DIR_PRINTF)
 
 BUILD_DIR= __build
 
-SRC=log.c		\
-	context.c	\
+SRC=log.c				\
+		context.c		\
+		region.c		\
+		quantum.c		\
+		malloc.c		\
+		free.c			\
+		show_mem.c	\
 
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))

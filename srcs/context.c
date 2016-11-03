@@ -11,25 +11,29 @@
 /* ************************************************************************** */
 
 #include "context.h"
+#include "intern_malloc.h"
 
-static bool	init(t_context *context)
+static void	init(t_context *context)
 {
+  context->pagesize = PAGESIZE;
 	INIT_LIST_HEAD(&context->tiny);
+	INIT_LIST_HEAD(&context->tiny_free);
+  context->tiny_region_size = context->pagesize;
 	INIT_LIST_HEAD(&context->small);
+	INIT_LIST_HEAD(&context->small_free);
+  context->small_region_size = context->tiny_region_size * 4;
 	INIT_LIST_HEAD(&context->large);
-	return (true);
+	INIT_LIST_HEAD(&context->large_free);
 }
 
-extern bool	get_context(t_context **out_context)
+extern void	get_context(t_context **out_context)
 {
 	static t_context	context = { .is_initialized = false };
 
-	*out_context = NULL;
 	if (context.is_initialized == false)
 	{
-		CHECK(init(&context));
+		init(&context);
 		context.is_initialized = true;
 	}
 	*out_context = &context;
-	return (true);
 }
