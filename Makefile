@@ -20,13 +20,14 @@ INCLUDES=-I ./ -I ./includes -I $(DIR_LIBFT) -I $(DIR_LIST) -I $(DIR_PRINTF)
 
 BUILD_DIR= __build
 
-SRC=log.c				\
-		context.c		\
-		region.c		\
-		quantum.c		\
-		malloc.c		\
-		free.c			\
-		show_mem.c	\
+SRC=log.c					\
+		context.c			\
+		map.c					\
+		region.c			\
+		quantum.c			\
+		malloc.c			\
+		free.c				\
+		show_memory.c	\
 
 
 OBJ=$(addprefix $(BUILD_DIR)/,$(SRC:.c=.o))

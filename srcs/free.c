@@ -1,6 +1,8 @@
 #include "context.h"
 #include "intern_malloc.h"
 
+#include <assert.h>
+
 static bool   region_too_many(t_list *head)
 {
   t_region  *region;
@@ -25,10 +27,7 @@ static bool   isfree(t_quantum *quantum)
   return (quantum->info.stack == STACK_FREE ? true : false);
 }
 
-extern bool   quantum_release(
-    t_list *region_head,
-    t_list *quantum_free_head,
-    t_quantum *quantum)
+extern bool   quantum_release(t_quantum *quantum, t_handle *handle)
 {
   t_region    *region;
   t_quantum   *prev;
@@ -53,51 +52,34 @@ extern bool   quantum_release(
     prev->info.size += sizeof(t_quantum) + quantum->info.size;
     quantum = prev;
   }
-  free_list_add(quantum, quantum_free_head);
-  if (region->size_free == region->size)
-  {
-    if (region_too_many(region_head))
-      CHECK(region_del(region));
-  }
+  free_list_add(quantum, &handle->quantum);
+  if (region->size_free == region->size && region_too_many(&handle->region))
+      CHECK(del_region(region));
   return (true);
 }
 
 extern void   free(void *addr)
 {
-  t_context *context;
+  t_handle  *handle;
   t_quantum *quantum;
-  t_list    *region_head;
-  t_list    *quantum_free_head;
 
   if (addr == NULL)
     return ;
   quantum = CONTAINER_OF(addr, t_quantum, chunk);
-  LOG_DEBUG("free quantum %p", quantum);
-  if (quantum->magic_number != MAGIC_NUMBER_NODE)
-    LOG_ERROR("Invalid magic_number %x", quantum->magic_number);
-  get_context(&context);
-  if (quantum->info.type == QUANTUM_TYPE_TINY)
+  assert(quantum->magic_number == MAGIC_NUMBER_NODE);
+  assert(quantum->info.stack == STACK_USED);
+  if (quantum->info.type == MEMORY_TYPE_LARGE)
   {
-    region_head = &context->tiny;
-    quantum_free_head = &context->tiny_free;
-  }
-  else if (quantum->info.type == QUANTUM_TYPE_SMALL)
-  {
-    region_head = &context->small;
-    quantum_free_head = &context->small_free;
-  }
-  else if (quantum->info.type == QUANTUM_TYPE_LARGE)
-  {
-    region_head = &context->large;
-    quantum_free_head = &context->large_free;
+    list_del(&quantum->list);
+    call_munmap(quantum, sizeof(t_quantum) + quantum->info.size);
   }
   else
   {
-    LOG_ERROR("Invalid quantum type %d", quantum->info.type);
-    return ;
+    if (!get_handle(quantum->info.type, &handle))
+    {
+      LOG_ERROR("get_handle failed");
+      return ;
+    }
+    quantum_release(quantum, handle);
   }
-  if (!quantum_release(region_head, quantum_free_head, quantum))
-    LOG_ERROR("quantum_release failed");
-
-  show_mem();
 }

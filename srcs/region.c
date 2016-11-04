@@ -1,83 +1,33 @@
 #include "context.h"
 #include "intern_malloc.h"
 
-#include <sys/mman.h>
-
-static void	*call_mmap(size_t size)
-{
-  void  *addr;
-
-	addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if (addr == MAP_FAILED)
-  {
-		LOG_ERROR("mmap failed size %zu", size);
-    return (NULL);
-  }
-  LOG_DEBUG("addr %p size %zu", addr, size);
-	return (addr);
-}
-
-extern bool call_munmap(void *addr, size_t size)
-{
-	if (munmap(addr, size) != 0)
-	{
-		LOG_ERROR("munmap() failed addr %p size %zu", (void *)addr, size);
-		return (false);
-	}
-  LOG_DEBUG("addr %p size %zu", addr, size);
-  return (true);
-}
-
-extern t_region *new_region(t_quantum_type type, size_t size)
+extern t_region *new_region(t_handle *handle)
 {
   t_region    *region;
 	t_quantum	  *quantum;
 
-  region = call_mmap(size);
+  region = call_mmap(handle->region_size);
   if (region == NULL)
     return (NULL);
-  region->size = size - sizeof(t_region);
+  region->size = handle->region_size - sizeof(t_region);
   region->size_free = region->size;
-  LOG_DEBUG("region %p size %zu", region, region->size);
-  INIT_LIST_HEAD(&region->list);
   region->head.magic_number = MAGIC_NUMBER_HEAD;
-  region->head.info.stack = STACK_USED;
-  region->head.info.size = 0;
+	INIT_LIST_HEAD(&region->head.list);
   region->quantum = &region->head.list;
-	INIT_LIST_HEAD(region->quantum);
+  list_add_tail(&region->list, &handle->region);
 	quantum = (void *)region->head.chunk;
-	quantum_setup(quantum, type, (size_t)sizeof(t_region), region->size);
+	quantum_setup(quantum, handle->type, (size_t)sizeof(t_region), region->size);
 	list_add_tail(&quantum->list, region->quantum);
+  free_list_add(quantum, &handle->quantum);
   return (region);
 }
 
-extern t_region *region_add(t_list *head, t_quantum_type type, size_t size)
-{
-  t_context *context;
-  t_region  *region;
-
-  get_context(&context);
-  LOG_DEBUG("pagesize %zu size %zu", context->pagesize, size);
-  if (type == QUANTUM_TYPE_LARGE)
-  {
-    size += sizeof(t_region) + sizeof(t_quantum);
-    size = get_multiple(size, context->pagesize);
-  }
-  region = new_region(type, size);
-  if (region == NULL)
-    return (NULL);
-  list_add_tail(&region->list, head);
-  return (region);
-}
-
-extern bool region_del(t_region *region)
+extern bool del_region(t_region *region)
 {
   t_quantum *quantum;
   t_list    *pos;
 
-  LOG_DEBUG("DELETE REGION");
-  region_show(region);
-
+  LOG_DEBUG("region %p size %zu", region, region->size);
   list_del(&region->list);
   pos = region->quantum;
   while ((pos = pos->next) && pos != region->quantum)

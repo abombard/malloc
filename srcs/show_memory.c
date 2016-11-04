@@ -54,15 +54,15 @@ extern bool region_show_list(t_list *head)
   return (true);
 }
 
-extern void show_mem(void)
+extern void show_memory(void)
 {
   t_context *context;
 
   get_context(&context);
   log_info("Tiny regions");
-  region_show_list(&context->tiny);
+  region_show_list(&context->tiny.region);
   log_info("Small regions");
-  region_show_list(&context->small);
+  region_show_list(&context->small.region);
   log_info("Large regions");
-  region_show_list(&context->large);
+  quantum_show_list(&context->large);
 }

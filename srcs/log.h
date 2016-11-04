@@ -5,7 +5,7 @@
 # include <errno.h>
 # include <stddef.h>
 
-# define DEBUG  1
+# define DEBUG  0
 
 # define INFO __FILE__, __func__, __LINE__
 

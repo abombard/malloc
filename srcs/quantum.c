@@ -3,7 +3,7 @@
 
 extern t_quantum  *quantum_setup(
     t_quantum *quantum,
-    t_quantum_type type,
+    t_memory_type type,
     size_t offset,
     size_t size)
 {
@@ -20,6 +20,51 @@ extern t_quantum  *quantum_setup(
 	quantum->info.size = size;
   quantum->info.offset = offset;
   return (quantum);
+}
+
+extern void     free_list_del(t_quantum *quantum)
+{
+  t_list    *free;
+
+  LOG_DEBUG("del quantum from free list");
+  quantum->info.stack = STACK_USED;
+  free = (t_list *)quantum->chunk;
+  list_del(free);
+}
+
+extern void     free_list_add(t_quantum *quantum, t_list *quantum_free_head)
+{
+  t_list    *free;
+  t_quantum *quantum_cur;
+  t_list    *pos;
+
+  LOG_DEBUG("add quantum to free list");
+  quantum->info.stack = STACK_FREE;
+  free = (t_list *)quantum->chunk;
+  pos = quantum_free_head;
+  while ((pos = pos->next) && pos != quantum_free_head)
+  {
+    quantum_cur = CONTAINER_OF((void *)pos, t_quantum, chunk);
+    if (quantum_cur->info.size > quantum->info.size)
+      break ;
+  }
+  list_add_tail(free, pos);
+}
+
+static t_quantum  *quantum_find(t_list *head, size_t size)
+{
+  t_quantum *quantum;
+  t_list    *pos;
+
+  LOG_DEBUG("size %zu", size);
+  pos = head;
+  while ((pos = pos->next) && pos != head)
+  {
+    quantum = CONTAINER_OF((void *)pos, t_quantum, chunk);
+    if (quantum->info.size >= size)
+      return (quantum);
+  }
+  return (NULL);
 }
 
 static t_quantum  *quantum_split(t_quantum *quantum, size_t quantum_new_size)
@@ -42,68 +87,50 @@ static t_quantum  *quantum_split(t_quantum *quantum, size_t quantum_new_size)
   return (new_quantum);
 }
 
-extern t_quantum  *quantum_find(t_list *head, size_t size)
+static t_quantum  *quantum_retrieve_large(size_t size)
 {
+  t_context *context;
   t_quantum *quantum;
-  t_list    *pos;
+  size_t    quantum_size;
 
-  LOG_DEBUG("size %zu", size);
-  pos = head;
-  while ((pos = pos->next) && pos != head)
-  {
-    quantum = CONTAINER_OF((void *)pos, t_quantum, chunk);
-    if (quantum->info.size >= size)
-      return (quantum);
-  }
-  return (NULL);
-}
-
-extern void     free_list_del(t_quantum *quantum)
-{
-  t_list    *free;
-
-  LOG_DEBUG("del quantum from free list");
-  quantum_show(quantum);
+  get_context(&context);
+  quantum_size = sizeof(t_quantum) + size;
+  quantum_size = get_multiple(quantum_size, context->pagesize);
+  quantum = call_mmap(quantum_size);
+  if (quantum == NULL)
+    return (NULL);
+  quantum_setup(quantum, MEMORY_TYPE_LARGE, sizeof(t_quantum), quantum_size);
   quantum->info.stack = STACK_USED;
-  free = (t_list *)quantum->chunk;
-  list_del(free);
+  list_add_tail(&quantum->list, &context->large);
+  return (quantum);
 }
 
-extern void     free_list_add(t_quantum *quantum, t_list *quantum_free_head)
+extern t_quantum  *quantum_retrieve(t_memory_type type, size_t size)
 {
-  t_list    *free;
-  t_quantum *quantum_cur;
-  t_list    *pos;
-
-  LOG_DEBUG("add quantum to free list");
-  quantum_show(quantum);
-  quantum->info.stack = STACK_FREE;
-  free = (t_list *)quantum->chunk;
-  LOG_DEBUG("Now looping to find the best pos");
-  pos = quantum_free_head;
-  while ((pos = pos->next) && pos != quantum_free_head)
-  {
-    LOG_DEBUG("looping");
-    quantum_cur = CONTAINER_OF((void *)pos, t_quantum, chunk);
-    if (quantum_cur->info.size > quantum->info.size)
-      break ;
-  }
-  list_add_tail(free, pos);
-}
-
-extern void     quantum_retrieve(t_quantum *quantum, size_t size, t_list *quantum_free_head)
-{
+  t_handle  *handle;
   t_region  *region;
+  t_quantum *quantum;
   t_quantum *new_quantum;
 
+  if (type == MEMORY_TYPE_LARGE)
+    return (quantum_retrieve_large(size));
+  CHECK(get_handle(type, &handle));
+  quantum = quantum_find(&handle->quantum, size);
+  if (quantum == NULL)
+  {
+    region = new_region(handle);
+    CHECK(region != NULL);
+    quantum = CONTAINER_OF(region->quantum->next, t_quantum, list);
+  }
   LOG_DEBUG("quantum %p size %zu size needed %zu", quantum, quantum->info.size, size);
   new_quantum = quantum_split(quantum, size);
   LOG_DEBUG("%s to split quantum", new_quantum ? "Succeed":"Failed");
   if (new_quantum)
   {
-    free_list_add(new_quantum, quantum_free_head);
+    free_list_add(new_quantum, &handle->quantum);
   }
   free_list_del(quantum);
   region = (void *)quantum - quantum->info.offset;
   region->size_free -= sizeof(t_quantum) + quantum->info.size;
+  return (quantum);
 }
