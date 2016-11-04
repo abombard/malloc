@@ -1,7 +1,11 @@
 #include "context.h"
 #include "intern_malloc.h"
 
-extern t_quantum  *quantum_setup(t_quantum *quantum, size_t offset, size_t size)
+extern t_quantum  *quantum_setup(
+    t_quantum *quantum,
+    t_quantum_type type,
+    size_t offset,
+    size_t size)
 {
   t_context *context;
 
@@ -12,6 +16,7 @@ extern t_quantum  *quantum_setup(t_quantum *quantum, size_t offset, size_t size)
   size -= sizeof(t_quantum);
 	quantum->magic_number = MAGIC_NUMBER_NODE;
 	INIT_LIST_HEAD(&quantum->list);
+  quantum->info.type = type;
 	quantum->info.size = size;
   quantum->info.offset = offset;
   return (quantum);
@@ -29,7 +34,7 @@ static t_quantum  *quantum_split(t_quantum *quantum, size_t quantum_new_size)
   new_quantum = (void *)quantum + quantum_total_size;
   new_quantum_offset = quantum->info.offset + quantum_total_size;
   new_quantum_size = quantum->info.size - quantum_new_size;
-  new_quantum = quantum_setup(new_quantum, new_quantum_offset, new_quantum_size);
+  new_quantum = quantum_setup(new_quantum, quantum->info.type, new_quantum_offset, new_quantum_size);
   if (new_quantum == NULL)
     return (NULL);
   quantum->info.size = quantum_new_size;
@@ -67,12 +72,23 @@ extern void     free_list_del(t_quantum *quantum)
 extern void     free_list_add(t_quantum *quantum, t_list *quantum_free_head)
 {
   t_list    *free;
+  t_quantum *quantum_cur;
+  t_list    *pos;
 
   LOG_DEBUG("add quantum to free list");
   quantum_show(quantum);
   quantum->info.stack = STACK_FREE;
   free = (t_list *)quantum->chunk;
-  list_add(free, quantum_free_head);
+  LOG_DEBUG("Now looping to find the best pos");
+  pos = quantum_free_head;
+  while ((pos = pos->next) && pos != quantum_free_head)
+  {
+    LOG_DEBUG("looping");
+    quantum_cur = CONTAINER_OF((void *)pos, t_quantum, chunk);
+    if (quantum_cur->info.size > quantum->info.size)
+      break ;
+  }
+  list_add_tail(free, pos);
 }
 
 extern void     quantum_retrieve(t_quantum *quantum, size_t size, t_list *quantum_free_head)

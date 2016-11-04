@@ -2,6 +2,7 @@
 #include "intern_malloc.h"
 
 static void     *addr_retrieve(
+    t_quantum_type type,
     t_list *region_head,
     t_list *quantum_free_head,
     size_t region_size,
@@ -14,7 +15,7 @@ static void     *addr_retrieve(
   quantum = quantum_find(quantum_free_head, quantum_size);
   if (quantum == NULL)
   {
-    region = region_add(region_head, region_size);
+    region = region_add(region_head, type, region_size);
     CHECK(region != NULL);
     quantum = CONTAINER_OF(region->quantum->next, t_quantum, list);
     free_list_add(quantum, quantum_free_head);
@@ -53,6 +54,7 @@ extern void *malloc(size_t size)
   {
     LOG_DEBUG("size %zu TINY", size);
     addr = addr_retrieve(
+        QUANTUM_TYPE_TINY,
         &context->tiny,
         &context->tiny_free,
         context->tiny_region_size,
@@ -62,6 +64,7 @@ extern void *malloc(size_t size)
   {
     LOG_DEBUG("size %zu SMALL", size);
     addr = addr_retrieve(
+        QUANTUM_TYPE_SMALL,
         &context->small,
         &context->small_free,
         context->small_region_size,
@@ -71,6 +74,7 @@ extern void *malloc(size_t size)
   {
     LOG_DEBUG("size %zu LARGE", size);
     addr = addr_retrieve(
+        QUANTUM_TYPE_LARGE,
         &context->large,
         &context->large_free,
         size,

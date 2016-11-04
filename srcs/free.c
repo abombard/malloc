@@ -76,20 +76,25 @@ extern void   free(void *addr)
   if (quantum->magic_number != MAGIC_NUMBER_NODE)
     LOG_ERROR("Invalid magic_number %x", quantum->magic_number);
   get_context(&context);
-  if (quantum->info.size < TINY_QUANTUM_SIZE)
+  if (quantum->info.type == QUANTUM_TYPE_TINY)
   {
     region_head = &context->tiny;
     quantum_free_head = &context->tiny_free;
   }
-  else if (quantum->info.size < SMALL_QUANTUM_SIZE)
+  else if (quantum->info.type == QUANTUM_TYPE_SMALL)
   {
     region_head = &context->small;
     quantum_free_head = &context->small_free;
   }
-  else
+  else if (quantum->info.type == QUANTUM_TYPE_LARGE)
   {
     region_head = &context->large;
     quantum_free_head = &context->large_free;
+  }
+  else
+  {
+    LOG_ERROR("Invalid quantum type %d", quantum->info.type);
+    return ;
   }
   if (!quantum_release(region_head, quantum_free_head, quantum))
     LOG_ERROR("quantum_release failed");

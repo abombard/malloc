@@ -29,22 +29,30 @@
 # define STACK_FREE       0
 # define STACK_USED       1
 
+typedef enum	e_quantum_type
+{
+  QUANTUM_TYPE_TINY = 1,
+  QUANTUM_TYPE_SMALL,
+  QUANTUM_TYPE_LARGE
+}             t_quantum_type;
+
 typedef struct	s_info
 {
-	size_t  stack:1;
-	size_t  size:sizeof(size_t) * 8 - 1;
+  uint8_t stack:1;
+  uint8_t type:3;
+	size_t  size;
   size_t  offset;
 }				t_info;
 
-# define MAGIC_NUMBER_HEAD        (uint8_t)0x4bed
-# define MAGIC_NUMBER_NODE			  (uint8_t)0xdeadbeef
+# define MAGIC_NUMBER_HEAD        0x4bed
+# define MAGIC_NUMBER_NODE			  0xdeadbeef
 
 # define TINY_QUANTUM_SIZE		256
 # define SMALL_QUANTUM_SIZE		1024
 
 typedef struct	s_quantum
 {
-	uint8_t   magic_number;
+	uint32_t  magic_number;
 
 	t_list		list;
 	t_info		info;

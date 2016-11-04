@@ -7,7 +7,7 @@ static void	*call_mmap(size_t size)
 {
   void  *addr;
 
-	addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+	addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	if (addr == MAP_FAILED)
   {
 		LOG_ERROR("mmap failed size %zu", size);
@@ -28,7 +28,7 @@ extern bool call_munmap(void *addr, size_t size)
   return (true);
 }
 
-extern t_region *new_region(size_t size)
+extern t_region *new_region(t_quantum_type type, size_t size)
 {
   t_region    *region;
 	t_quantum	  *quantum;
@@ -46,24 +46,24 @@ extern t_region *new_region(size_t size)
   region->quantum = &region->head.list;
 	INIT_LIST_HEAD(region->quantum);
 	quantum = (void *)region->head.chunk;
-	quantum_setup(quantum, (size_t)sizeof(t_region), region->size);
+	quantum_setup(quantum, type, (size_t)sizeof(t_region), region->size);
 	list_add_tail(&quantum->list, region->quantum);
   return (region);
 }
 
-extern t_region *region_add(t_list *head, size_t size)
+extern t_region *region_add(t_list *head, t_quantum_type type, size_t size)
 {
   t_context *context;
   t_region  *region;
 
   get_context(&context);
   LOG_DEBUG("pagesize %zu size %zu", context->pagesize, size);
-  if (size % context->pagesize != 0)
+  if (type == QUANTUM_TYPE_LARGE)
   {
     size += sizeof(t_region) + sizeof(t_quantum);
     size = get_multiple(size, context->pagesize);
   }
-  region = new_region(size);
+  region = new_region(type, size);
   if (region == NULL)
     return (NULL);
   list_add_tail(&region->list, head);
@@ -72,7 +72,19 @@ extern t_region *region_add(t_list *head, size_t size)
 
 extern bool region_del(t_region *region)
 {
+  t_quantum *quantum;
+  t_list    *pos;
+
+  LOG_DEBUG("DELETE REGION");
+  region_show(region);
+
   list_del(&region->list);
+  pos = region->quantum;
+  while ((pos = pos->next) && pos != region->quantum)
+  {
+    quantum = CONTAINER_OF(pos, t_quantum, list);
+    free_list_del(quantum);
+  }
   CHECK(call_munmap(region, sizeof(t_region) + region->size));
   return (true);
 }
