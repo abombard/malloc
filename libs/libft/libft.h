@@ -95,7 +95,7 @@ char		*ft_itoa(int n);
 /*
 ** other
 */
-char		**ft_strsplit(char *s, char c);
+char		**ft_strsplit(char const *s, char c);
 char		**strsplit_whitespace(char *str);
 char		*get_file(char *arg);
 

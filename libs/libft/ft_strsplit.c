@@ -1,88 +1,77 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   ft_strsplit.c                                      :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2016/03/31 13:21:34 by abombard          #+#    #+#             */
-/*   Updated: 2016/03/31 13:23:11 by abombard         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "libft.h"
 
-static int	nb_arg(char *s, char c)
+static int		get_next_entry(char *s, char c, size_t *begin, size_t *size)
 {
-	int	ret;
-	int	i;
-
-	ret = 0;
-	i = 0;
-	while (*s)
-	{
-		if (*s == c && i)
-		{
-			ret += 1;
-			i = 0;
-		}
-		else
-			++i;
-		++s;
-	}
-	return (i ? ret + 1 : ret);
-}
-
-static char	*get_str(char **s, char c)
-{
-	char		buf[ft_strlen(*s) + 1];
-	int			i;
-	char		*pt;
-
-	pt = *s;
-	i = 0;
-	while (*pt && *pt != c)
-	{
-		buf[i++] = *pt++;
-	}
-	buf[i] = 0;
-	*s = pt;
-	return (ft_strdup(buf));
-}
-
-static char	**split_but(char *s, char c, int len)
-{
-	char		**ret;
-	int			i;
-
-	ret = malloc(sizeof(char *) * (len + 1));
-	if (!ret)
-		return (NULL);
-	i = 0;
-	while (i < len)
-	{
-		ret[i++] = get_str(&s, c);
-		while (*s == c)
-			s++;
-		if (!*s)
-			break ;
-	}
-	ret[i] = 0;
-	return (ret);
-}
-
-char		**ft_strsplit(char *s, char c)
-{
-	int	len;
-
-	if (!s)
-		return (NULL);
+	*begin = 0;
+	*size = 0;
 	while (*s && *s == c)
+	{
 		s++;
-	if (!*s)
+		(*begin)++;
+	}
+	while (*s && *s != c)
+	{
+		s++;
+		(*size)++;
+	}
+	return (*size ? 1 : 0);
+}
+
+static size_t	compute_entry_count(char *s, char c)
+{
+	size_t	entry_count;
+	size_t	s_offset;
+	size_t	entry_offset;
+	size_t	entry_size;
+
+	entry_count = 0;
+	s_offset = 0;
+	while (get_next_entry(s + s_offset, c, &entry_offset, &entry_size))
+	{
+		s_offset += entry_offset + entry_size;
+		entry_count++;
+	}
+	return (entry_count);
+}
+
+static int		fill_array(char *s, char c, char **array)
+{
+	size_t	s_offset;
+	size_t	array_index;
+	char	*entry;
+	size_t	entry_offset;
+	size_t	entry_size;
+
+	array_index = 0;
+	s_offset = 0;
+	while (get_next_entry(s + s_offset, c, &entry_offset, &entry_size))
+	{
+		entry = (char *)malloc(entry_size + 1);
+		if (!entry)
+			return (0);
+		s_offset += entry_offset;
+		ft_memcpy(entry, s + s_offset, entry_size);
+		entry[entry_size] = '\0';
+		s_offset += entry_size;
+		array[array_index] = entry;
+		array_index++;
+	}
+	return (1);
+}
+
+char			**ft_strsplit(char const *s, char c)
+{
+	size_t	entry_count;
+	char	**array;
+
+	if (s == NULL)
 		return (NULL);
-	len = nb_arg(s, c);
-	if (!len)
+	entry_count = compute_entry_count((char *)s, c);
+	array = malloc(sizeof(char *) * (entry_count + 1));
+	if (!array)
 		return (NULL);
-	return (split_but(s, c, len));
+	array[entry_count] = 0;
+	if (!fill_array((char *)s, c, array))
+		return (NULL);
+	return (array);
 }
