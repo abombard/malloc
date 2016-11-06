@@ -12,58 +12,48 @@
 
 #include "libft.h"
 
-int			ft_atoi(const char *str)
+int     ft_atoi(const char *str)
 {
-	long long	nbr;
-	int			x;
+  int       nbr;
+  int       is_negativ;
+  int       i;
 
-	nbr = 0;
-	x = 1;
-	while (*str)
-	{
-		if ((*str == '-' || *str == '+') && ft_isdigit(*(str + 1)) == 1)
-			x = (*(str++) == '-' ? -1 : 1);
-		if (ft_isdigit(*str) == 1)
-		{
-			while (ft_isdigit(*str) == 1)
-			{
-				nbr = (nbr * 10) + (*str - '0');
-				str++;
-			}
-			return ((int)(nbr * x));
-		}
-		if (ft_isspace(*str))
-			str++;
-		else
-			return (0);
-	}
-	return (0);
+  i = 0;
+	while (str[0] == '+')
+		i++;
+  is_negativ = 0;
+  if (str[0] == '-')
+  {
+    is_negativ = 1;
+    i++;
+  }
+  nbr = 0;
+  while (ft_isdigit(str[i]))
+  {
+    nbr = (nbr * 10) + str[i] - '0';
+    i++;
+  }
+  return (is_negativ ? -nbr : nbr);
 }
 
 long long	ft_atol(const char *str)
 {
-	long long	nbr;
-	int			x;
+  long long nbr;
+  int       is_negativ;
+  int       i;
 
-	nbr = 0;
-	x = 1;
-	while (*str)
-	{
-		if ((*str == '-' || *str == '+') && ft_isdigit(*(str + 1)) == 1)
-			x = (*(str++) == '-' ? -1 : 1);
-		if (ft_isdigit(*str) == 1)
-		{
-			while (ft_isdigit(*str) == 1)
-			{
-				nbr = (nbr * 10) + (*str - '0');
-				str++;
-			}
-			return ((nbr * x));
-		}
-		if (ft_isspace(*str))
-			str++;
-		else
-			return (0);
-	}
-	return (0);
+  i = 0;
+  is_negativ = 0;
+  if (str[0] == '-')
+  {
+    is_negativ = 1;
+    i++;
+  }
+  nbr = 0;
+  while (ft_isdigit(str[i]))
+  {
+    nbr = (nbr * 10) + str[i] - '0';
+    i++;
+  }
+  return (is_negativ ? -nbr : nbr);
 }

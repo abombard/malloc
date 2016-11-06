@@ -26,9 +26,15 @@ char	*get_file(char *arg)
 	lseek(fd, 0, SEEK_SET);
 	file = malloc(sizeof(char) * (len + 1));
 	if (!file)
+	{
+		close(fd);
 		return (NULL);
+	}
 	if (read(fd, file, len) == -1)
+	{
+		close(fd);
 		return (NULL);
+	}
 	file[len] = 0;
 	close(fd);
 	return (file);

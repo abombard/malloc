@@ -6,7 +6,7 @@
 /*   By: abombard <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/03/31 14:10:56 by abombard          #+#    #+#             */
-/*   Updated: 2016/10/31 14:17:17 by abombard         ###   ########.fr       */
+/*   Updated: 2016/03/31 14:43:22 by abombard         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ void		ft_memdel(void **ap);
 /*
 ** string operations
 */
-int			ft_strlen(const char *str);
+size_t	ft_strlen(const char *str);
 char		*ft_strcpy(char *dst, const char *src);
 char		*ft_strncpy(char *dst, const char *src, size_t n);
 int			ft_strcmp(const char *s1, const char *s2);
@@ -95,7 +95,7 @@ char		*ft_itoa(int n);
 /*
 ** other
 */
-char		**ft_strsplit(char const *s, char c);
+char		**ft_strsplit(char *s, char c);
 char		**strsplit_whitespace(char *str);
 char		*get_file(char *arg);
 

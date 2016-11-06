@@ -14,15 +14,19 @@
 
 char		*ft_strjoin(char const *s1, char const *s2)
 {
-	char	*dst;
+	char		*s;
+	size_t	ss1;
+	size_t	ss2;
 
-	dst = NULL;
-	if (s1 && s2)
-	{
-		if (!(dst = (char*)ft_memalloc(ft_strlen(s1) + ft_strlen(s2))))
-			return (NULL);
-		ft_strcpy(dst, (char*)s1);
-		ft_strcat(dst, (char*)s2);
-	}
-	return (dst);
+	if (s1 == NULL || s2 == NULL)
+		return (NULL);
+	ss1 = ft_strlen(s1);
+	ss2 = ft_strlen(s2);
+	s = malloc(ss1 + ss2 + 1);
+	if (s == NULL)
+		return (NULL);
+	ft_memcpy(s, s1, ss1);
+	ft_memcpy(s + ss1, s2, ss2);
+	s[ss1 + ss2] = '\0';
+	return (s);
 }

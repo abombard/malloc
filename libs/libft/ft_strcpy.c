@@ -16,15 +16,14 @@ char	*ft_strcpy(char *dst, const char *src)
 {
 	int		x;
 
+	if (dst == NULL || src == NULL)
+		return (NULL);
 	x = 0;
-	if (dst && src)
+	while (src[x])
 	{
-		while (src[x])
-		{
-			dst[x] = src[x];
-			x++;
-		}
-		dst[x] = '\0';
+		dst[x] = src[x];
+		x++;
 	}
+	dst[x] = '\0';
 	return (dst);
 }
