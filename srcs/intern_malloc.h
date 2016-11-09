@@ -1,6 +1,9 @@
 #ifndef INTERN_MALLOC_H
 # define INTERN_MALLOC_H
 
+# include "libft.h"
+# include "printf.h"
+
 extern void			get_context(t_context **context);
 extern bool			get_handle(t_memory_type memory_type, t_handle **handle);
 

@@ -27,6 +27,7 @@ SRC=log.c				\
 	quantum.c			\
 	malloc.c			\
 	free.c				\
+	realloc.c			\
 	show_memory.c		\
 
 
