@@ -1,8 +1,6 @@
 #include "context.h"
 #include "intern_malloc.h"
 
-#include <assert.h>
-
 static bool	 region_too_many(t_list *head)
 {
 	t_region	*region;
@@ -66,8 +64,9 @@ extern void	 free(void *addr)
 	if (addr == NULL)
 		return ;
 	quantum = CONTAINER_OF(addr, t_quantum, chunk);
-	assert(quantum->magic_number == MAGIC_NUMBER_NODE);
-	assert(quantum->info.stack == STACK_USED);
+	if (quantum->magic_number != MAGIC_NUMBER_NODE ||
+		quantum->info.stack != STACK_USED)
+		return ;
 	if (quantum->info.type == MEMORY_TYPE_LARGE)
 	{
 		list_del(&quantum->list);
